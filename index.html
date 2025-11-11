@@ -12,7 +12,7 @@
 html { margin-left: 22pt; }
 body { background-color: #eeb300; color: #332222; font-family: 'Averia Gruesa Libre'; font-size: 22pt; text-align: left; margin: 20 30 80 20; }
 h1 { color: #bb1811; padding: 4pt; }
-pre { font-family: 'Averia Gruesa Libre'; font-size: 80%; }
+pre { font-family: 'Averia Gruesa Libre'; font-size: 80%; white-space: pre-wrap; word-wrap: break-word; }
 </style>
 </head>
 <body>
@@ -25,7 +25,8 @@ pre { font-family: 'Averia Gruesa Libre'; font-size: 80%; }
 At Object Notation
 </p>
 
-<h2>example</h2>
+<h3>example</h3>
+
 <pre>
 @version <2>
 @models (
@@ -42,6 +43,48 @@ At Object Notation
 		@sql [SELECT id, name FROM source_data]
 	}
 )
+</pre>
+
+<h3>example</h3>
+
+<pre>
+@version <2> @models ( { @name my_transformation @description [This model transforms raw data] @database your_database @schema your_schema @materialized table @columns ( { @name id @description [A unique identifier] } { @name name @description [The name of the item] } ) @sql [SELECT id, name FROM source_data] } )
+</pre>
+
+
+<h3>syntax</h3>
+<pre>
+
+mapping
+	{ @key1 value1 @key2 value2 }
+
+list
+	( value1 value2 )
+
+string
+	abc
+	[abc def]
+	[multi
+		line
+			string]
+
+numeric
+	<1>
+	<-2>
+	<1.2>
+	<1e5>
+	<1h2m>
+	<33mb>
+	<22kb>
+
+comment
+	#comment
+	#[comment with whitespaces]
+	#[multi
+		line
+			comment]
+	#<1>
+
 </pre>
 
 
