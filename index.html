@@ -59,7 +59,7 @@ document
 	is always a mapping
 
 mapping
-	{ @key1 value1 @key2 value2 }
+	{ @key1 value1 @key2 value2 @key3 <123> }
 
 list
 	( value1 value2 )
@@ -67,9 +67,15 @@ list
 string
 	abc
 	[abc def]
+	[every \] closing square bracket \] should be escaped \] to be part of text]
+	[backslash \\ should be escaped \\ too]
 	[multi
 		line
 			string]
+	[-
+		prefix spaces removed
+		suffix spaces removed
+	-]
 
 numeric
 	<1>
@@ -79,6 +85,10 @@ numeric
 	<1h2m>
 	<33mb>
 	<22kb>
+	<2*60 + 22 - 3 + 444/2 >
+	< 333 >> 20 >
+	&lt;true&gt;
+	&lt;false&gt;
 
 comment
 	#comment
