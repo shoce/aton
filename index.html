@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="format-detection" content="telephone=no" />
+<meta name="format-detection" content="date=no" />
+<meta name="format-detection" content="address=no" />
+<meta name="format-detection" content="email=no" />
+<title>ATON</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Averia+Gruesa+Libre&display=swap');
+body { background-color: #eeb300; color: #332222; font-family: 'Averia Gruesa Libre'; font-size: 22pt; text-align: left; margin: 20 30 80 20; }
+h1 { color: #bb1811; padding: 4pt; }
+</style>
+</head>
+<body>
+
+
+
+<h1>ATON</h1>
+
+<p>
+ATON is At Object Notation.
+</p>
+
+<h2>example</h2>
+<pre>
+@version <2>
+@models (
+	{
+		@name my_transformation
+		@description [This model transforms raw data]
+		@database your_database
+		@schema your_schema
+		@materialized table
+		@columns (
+			{ @name id @description [A unique identifier] }
+			{ @name name @description [The name of the item] }
+		)
+		@sql [SELECT id, name FROM source_data]
+	}
+)
+</pre>
+
+
+
+</body>
+</html>
+
+
