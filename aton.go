@@ -134,7 +134,7 @@ func (m *Marshaler) marshalValue(sb *strings.Builder, v interface{}) error {
 
 	case string:
 
-		sb.WriteString(fmt.Sprintf("[%s]", val))
+		sb.WriteString(fmt.Sprintf("[%s]", EscStr(val)))
 
 	default:
 
@@ -151,4 +151,11 @@ func MarshalDocument(v interface{}) (string, error) {
 		return "", err
 	}
 	return result + NL, nil
+}
+
+func EscStr(text string) string {
+	for _, c := range "\\]" {
+		text = strings.ReplaceAll(text, string(c), "\\"+string(c))
+	}
+	return text
 }
