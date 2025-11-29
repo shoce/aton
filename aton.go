@@ -5,275 +5,150 @@ GoFmt GoBuildNull
 GoRun
 */
 
-package main
+package aton
 
 import (
 	"fmt"
-	"strconv"
+	"os"
 	"strings"
-	"unicode"
 )
 
 const (
-	NL = "\n"
+	SP   = " "
+	SPAC = "    "
+	TAB  = "\t"
+	NL   = "\n"
 )
 
-type Value interface{}
+func example() {
 
-type tokenType int
+	data := map[string]interface{}{
+		"version": 2,
+		"models": []interface{}{
+			map[string]interface{}{
+				"name":         "my_transformation",
+				"description":  "This model transforms raw data",
+				"database":     "your_database",
+				"schema":       "your_schema",
+				"materialized": "table",
+				"columns": []interface{}{
+					map[string]interface{}{
+						"name":        "id",
+						"description": "A unique identifier",
+						"primary_key": true,
+					},
+					map[string]interface{}{
+						"name":        "name",
+						"description": "The name of the item",
+						"primary_key": false,
+					},
+				},
+				"sql": "SELECT id, name FROM source_data",
+			},
+		},
+	}
 
-const (
-	tokenEOF tokenType = iota
-	tokenKey
-	tokenString
-	tokenInteger
-	tokenDictOpen
-	tokenDictClose
-	tokenListOpen
-	tokenListClose
-)
+	fmt.Printf("%#v"+NL, data)
 
-type token struct {
-	typ   tokenType
-	value string
-}
-
-type lexer struct {
-	input string
-	pos   int
-	ch    rune
-}
-
-func newLexer(input string) *lexer {
-	l := &lexer{input: input}
-	l.readChar()
-	return l
-}
-
-func (l *lexer) readChar() {
-	if l.pos >= len(l.input) {
-		l.ch = 0
+	if datatext, err := MarshalDocument(data); err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR MarshalDocument %v"+NL, err)
+		os.Exit(1)
 	} else {
-		l.ch = rune(l.input[l.pos])
+		fmt.Println(datatext)
 	}
-	l.pos++
+
 }
 
-func (l *lexer) peekChar() rune {
-	if l.pos >= len(l.input) {
-		return 0
-	}
-	return rune(l.input[l.pos])
+type Marshaler struct {
+	indent string
+	level  int
 }
 
-func (l *lexer) skipWhitespace() {
-	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
-		l.readChar()
-	}
+func NewMarshaler() *Marshaler {
+	return &Marshaler{indent: TAB}
 }
 
-func (l *lexer) readBracketedString() string {
-	var result strings.Builder
-	l.readChar() // skip '['
-
-	for l.ch != ']' && l.ch != 0 {
-		result.WriteRune(l.ch)
-		l.readChar()
+func (m *Marshaler) Marshal(v interface{}) (string, error) {
+	var sb strings.Builder
+	if err := m.marshalValue(&sb, v); err != nil {
+		return "", err
 	}
-
-	if l.ch == ']' {
-		l.readChar() // skip ']'
-	}
-
-	return result.String()
+	return sb.String(), nil
 }
 
-func (l *lexer) readInteger() string {
-	var result strings.Builder
-	l.readChar() // skip '<'
+func (m *Marshaler) marshalValue(sb *strings.Builder, v interface{}) error {
+	switch val := v.(type) {
 
-	for unicode.IsDigit(l.ch) {
-		result.WriteRune(l.ch)
-		l.readChar()
-	}
+	case map[string]interface{}:
 
-	if l.ch == '>' {
-		l.readChar() // skip '>'
-	}
+		if m.level > 0 {
+			sb.WriteString("{")
+			m.level++
+		}
 
-	return result.String()
-}
+		dict, _ := v.(map[string]interface{})
+		for key, value := range dict {
+			sb.WriteString(NL)
+			sb.WriteString(strings.Repeat(m.indent, m.level))
+			sb.WriteString("@")
+			sb.WriteString(key)
+			sb.WriteString(SP)
+			if err := m.marshalValue(sb, value); err != nil {
+				return err
+			}
+		}
 
-func (l *lexer) readUnquotedString() string {
-	var result strings.Builder
+		if m.level > 0 {
+			m.level--
+			sb.WriteString(NL)
+			sb.WriteString(strings.Repeat(m.indent, m.level))
+			sb.WriteString("}")
+		}
 
-	for l.ch != 0 && !unicode.IsSpace(l.ch) &&
-		l.ch != '{' && l.ch != '}' &&
-		l.ch != '(' && l.ch != ')' &&
-		l.ch != '<' && l.ch != '[' {
-		result.WriteRune(l.ch)
-		l.readChar()
-	}
+	case []interface{}:
 
-	return result.String()
-}
+		sb.WriteString("(")
+		m.level++
 
-func (l *lexer) nextToken() token {
-	l.skipWhitespace()
+		list, _ := v.([]interface{})
+		for _, item := range list {
+			sb.WriteString(NL)
+			sb.WriteString(strings.Repeat(m.indent, m.level))
+			if err := m.marshalValue(sb, item); err != nil {
+				return err
+			}
+		}
 
-	switch l.ch {
-	case 0:
-		return token{typ: tokenEOF}
-	case '{':
-		l.readChar()
-		return token{typ: tokenDictOpen}
-	case '}':
-		l.readChar()
-		return token{typ: tokenDictClose}
-	case '(':
-		l.readChar()
-		return token{typ: tokenListOpen}
-	case ')':
-		l.readChar()
-		return token{typ: tokenListClose}
-	case '@':
-		l.readChar()
-		key := l.readUnquotedString()
-		return token{typ: tokenKey, value: key}
-	case '[':
-		str := l.readBracketedString()
-		return token{typ: tokenString, value: str}
-	case '<':
-		intStr := l.readInteger()
-		return token{typ: tokenInteger, value: intStr}
+		m.level--
+		sb.WriteString(NL)
+		sb.WriteString(strings.Repeat(m.indent, m.level))
+		sb.WriteString(")")
+
+	case bool:
+
+		sb.WriteString(fmt.Sprintf("<%t>", val))
+
+	case int:
+
+		sb.WriteString(fmt.Sprintf("<%d>", val))
+
+	case string:
+
+		sb.WriteString(fmt.Sprintf("[%s]", val))
+
 	default:
-		// Unquoted string
-		str := l.readUnquotedString()
-		return token{typ: tokenString, value: str}
+
+		return fmt.Errorf("unsupported type %T", v)
+
 	}
+	return nil
 }
 
-type Parser struct {
-	lexer     *lexer
-	curToken  token
-	peekToken token
-}
-
-func NewParser(input string) *Parser {
-	p := &Parser{lexer: newLexer(input)}
-	p.nextToken()
-	p.nextToken()
-	return p
-}
-
-func (p *Parser) nextToken() {
-	p.curToken = p.peekToken
-	p.peekToken = p.lexer.nextToken()
-}
-
-func (p *Parser) Parse() (map[string]interface{}, error) {
-	return p.parseDict()
-}
-
-func (p *Parser) parseDict() (map[string]interface{}, error) {
-	dict := make(map[string]interface{})
-
-	// Skip opening brace if present
-	if p.curToken.typ == tokenDictOpen {
-		p.nextToken()
-	}
-
-	for p.curToken.typ != tokenDictClose && p.curToken.typ != tokenEOF {
-		if p.curToken.typ != tokenKey {
-			return nil, fmt.Errorf("expected key, got %v", p.curToken)
-		}
-
-		key := p.curToken.value
-		p.nextToken()
-
-		value, err := p.parseValue()
-		if err != nil {
-			return nil, err
-		}
-
-		dict[key] = value
-	}
-
-	if p.curToken.typ == tokenDictClose {
-		p.nextToken()
-	}
-
-	return dict, nil
-}
-
-func (p *Parser) parseList() ([]interface{}, error) {
-	list := make([]interface{}, 0)
-
-	if p.curToken.typ == tokenListOpen {
-		p.nextToken()
-	}
-
-	for p.curToken.typ != tokenListClose && p.curToken.typ != tokenEOF {
-		value, err := p.parseValue()
-		if err != nil {
-			return nil, err
-		}
-		list = append(list, value)
-	}
-
-	if p.curToken.typ == tokenListClose {
-		p.nextToken()
-	}
-
-	return list, nil
-}
-
-func (p *Parser) parseValue() (Value, error) {
-	switch p.curToken.typ {
-	case tokenDictOpen:
-		return p.parseDict()
-	case tokenListOpen:
-		return p.parseList()
-	case tokenInteger:
-		val, err := strconv.Atoi(p.curToken.value)
-		if err != nil {
-			return nil, fmt.Errorf("invalid integer %s", p.curToken.value)
-		}
-		p.nextToken()
-		return val, nil
-	case tokenString:
-		val := p.curToken.value
-		p.nextToken()
-		return val, nil
-	default:
-		return nil, fmt.Errorf("unexpected token %v", p.curToken)
-	}
-}
-
-func ParseDocument(input string) (map[string]interface{}, error) {
-	parser := NewParser(input)
-	return parser.Parse()
-}
-func main() {
-
-	input := `
-    @version <2>
-    @models (
-        {
-            @name my_transformation
-            @description [This model transforms raw data]
-            @columns (
-                { @name id @description [A unique identifier] }
-                { @name name }
-            )
-        }
-    )`
-
-	doc, err := ParseDocument(input)
+func MarshalDocument(v interface{}) (string, error) {
+	marshaler := NewMarshaler()
+	result, err := marshaler.Marshal(v)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
-
-	fmt.Printf("%#v"+NL, doc)
-
+	return result + NL, nil
 }
