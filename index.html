@@ -28,19 +28,27 @@ AT Object Notation
 <h3>example</h3>
 
 <pre>
-@version <2>
-@models (
+@[version] <2>
+@[models] (
 	{
-		@name my_transformation
-		@description [This model transforms raw data]
-		@database your_database
-		@schema your_schema
-		@materialized table
-		@columns (
-			{ @name id @description [A unique identifier] }
-			{ @name name @description [The name of the item] }
+		@[name] [my_transformation]
+		@[description] [This model transforms raw data]
+		@[database] [your_database]
+		@[schema] [your_schema]
+		@[materialized] [table]
+		@[columns] (
+			{
+				@[name] [id]
+				@[description] [A unique identifier]
+				@[primary_key] &lt;true>
+			}
+			{
+				@[name] [name]
+				@description [The name of the item]
+				@[primary_key] &lt;false>
+			}
 		)
-		@sql [SELECT id, name FROM source_data]
+		@[sql] [SELECT id, name FROM source_data]
 	}
 )
 </pre>
@@ -48,34 +56,62 @@ AT Object Notation
 <h3>example</h3>
 
 <pre>
-@version <2> @models ( { @name my_transformation @description [This model transforms raw data] @database your_database @schema your_schema @materialized table @columns ( { @name id @description [A unique identifier] } { @name name @description [The name of the item] } ) @sql [SELECT id, name FROM source_data] } )
+@[version] <2> @[models] ( { @[name] [my_transformation] @[description] [This model transforms raw data] @[database] [your_database] @[schema] [your_schema] @[materialized] [table] @[columns] ( { @[name] [id] @[description] [A unique identifier] } { @[name] [name] @[description] [The name of the item] } ) @[sql] [SELECT id, name FROM source_data] } )
+</pre>
+
+
+<h3>benefits over yaml</h3>
+<pre>
+- does not depend on new lines and indentations - the whole document can be one line
+- type of any element is easily visible - <> for numeric and boolean, [] for strings
+- [] brackets for strings instead of quotes
+- a document is strictly always a mapping
+- no commas needed to separate elements in lists and mappings - the only separator is space
+- no colons needed for mappings (dictionaries) - a key is prefixed by @ and the value follows the key
+- mathematical operations inside <>
 </pre>
 
 
 <h3>syntax</h3>
 <pre>
-
 document
 	is always a mapping
 
 mapping
-	{ @key1 value1 @key2 value2 @key3 <123> }
+	{ @[key1] [value1] @[key2] [value2] @[key3] <123> @[key4] ( <1> <2> ) }
+	{ @[key a] [value 1] @[key b] [value 2] }
+	{ @&lt;true> [value1] @&lt;false> [value2] }
+	{ @<44> &lt;true> @<14> &lt;true> @<88> &lt;false> }
 
 list
-	( value1 value2 )
+	( [value 1] value2 )
+	( <1> <7> )
 
 string
-	abc
+	[abc]
 	[abc def]
-	[every \] closing square bracket \] should be escaped \] to be part of text]
-	[backslash \\ should be escaped \\ too]
+	[123]
+	[<123>]
+	[true]
+	[&lt;true>]
+	[{ "some": "json" }]
+	[every \] closing square bracket \] should be escaped \] to be a part of text]
+	[backslashes \\ should be escaped \\ too]
+	[opening [ square [ brackets [ are ok ]
 	[multi
 		line
 			string]
-	[-
-		prefix spaces removed
-		suffix spaces removed
+	[-      prefix spaces/tabs/newlines removed
+		suffix spaces/tabs/newlines removed
 	-]
+	[>
+	one tab prefix removed from every string
+	one tab prefix removed from every string
+	]
+	[>>
+		two tabs prefix removed from every string
+		two tabs prefix removed from every string
+	]
 
 numeric
 	<1>
@@ -85,24 +121,30 @@ numeric
 	<1h2m>
 	<33mb>
 	<22kb>
-	<2*60 + 22 - 3 + 444/2 >
-	< 333 >> 20 >
-	&lt;true&gt;
-	&lt;false&gt;
+	< 2*60 + 22 - 3 + 444/3 >
+	< 333 << 20 >
+	&lt;true>
+	&lt;false>
 
 comment
-	#comment
-	#[comment with whitespaces]
+	#[comment]
+	#[few words comment]
 	#[multi
 		line
 			comment]
-	#<1>
-	#{ @key1 value1 @key2 value2 }
-	#( value1 value2 )
-
+	#<123>
+	#&lt;false>
+	#{ @[key1] [value1] @[key2] [value2] }
+	#( [value1] [value2] )
 </pre>
 
 
+<pre>
+
+
+
+
+</pre>
 
 </body>
 </html>
