@@ -23,7 +23,7 @@ const (
 	NL   = "\n"
 )
 
-func example() {
+func main() {
 
 	data := map[string]interface{}{
 		"version": 2,
