@@ -93,8 +93,9 @@ func (m *Marshaler) marshalValue(sb *strings.Builder, v interface{}) error {
 		for key, value := range dict {
 			sb.WriteString(NL)
 			sb.WriteString(strings.Repeat(m.indent, m.level))
-			sb.WriteString("@")
+			sb.WriteString("@[")
 			sb.WriteString(key)
+			sb.WriteString("]")
 			sb.WriteString(SP)
 			if err := m.marshalValue(sb, value); err != nil {
 				return err
